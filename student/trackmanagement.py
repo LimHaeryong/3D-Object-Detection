@@ -34,21 +34,32 @@ class Track:
         # unassigned measurement transformed from sensor to vehicle coordinates
         # - initialize track state and track score with appropriate values
         ############
-
-        self.x = np.matrix([[49.53980697],
-                        [ 3.41006279],
-                        [ 0.91790581],
-                        [ 0.        ],
-                        [ 0.        ],
-                        [ 0.        ]])
-        self.P = np.matrix([[9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 6.4e-03, 0.0e+00, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00],
-                        [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+01]])
-        self.state = 'confirmed'
-        self.score = 0
+        pos_sensor = np.ones((4, 1))
+        pos_sensor[:3] = meas.z
+        pos_veh = meas.sensor.sens_to_veh*pos_sensor
+        self.x = np.zeros((6, 1))
+        self.x[:3] = pos_veh[:3]
+        
+        self.P = np.zeros((6, 6))
+        self.P[3, 3] = params.sigma_p44
+        self.P[4, 4] = params.sigma_p55
+        self.P[5, 5] = params.sigma_p66
+        
+        self.P[:3, :3] = M_rot*meas.R*M_rot.transpose()
+        #self.x = np.matrix([[49.53980697],
+         #               [ 3.41006279],
+          #              [ 0.91790581],
+           #             [ 0.        ],
+            #            [ 0.        ],
+             #           [ 0.        ]])
+        #self.P = np.matrix([[9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
+         #               [0.0e+00, 9.0e-02, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00],
+          #              [0.0e+00, 0.0e+00, 6.4e-03, 0.0e+00, 0.0e+00, 0.0e+00],
+           #             [0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00, 0.0e+00],
+            #            [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+03, 0.0e+00],
+             #           [0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 0.0e+00, 2.5e+01]])
+        self.state = 'initialized'
+        self.score = 1./params.window
         
         ############
         # END student code
@@ -69,7 +80,7 @@ class Track:
         self.P = P  
         
     def set_t(self, t):
-        self.t = t  
+        self.t = t
         
     def update_attributes(self, meas):
         # use exponential sliding average to estimate dimensions and orientation
@@ -107,10 +118,16 @@ class Trackmanagement:
             if meas_list: # if not empty
                 if meas_list[0].sensor.in_fov(track.x):
                     # your code goes here
-                    pass 
-
+                    track.score -= 2./params.window 
         # delete old tracks   
-
+        for track in self.track_list:
+            if track.state == 'confirmed':
+                if track.score <= params.delete_threshold:
+                    self.delete_track(track)
+            else:
+                if track.P[0,0] > params.max_P or track.P[1,1] > params.max_P:
+                    self.delete_track(track)
+                    
         ############
         # END student code
         ############ 
@@ -140,8 +157,13 @@ class Trackmanagement:
         # - set track state to 'tentative' or 'confirmed'
         ############
 
-        pass
-        
+        track.score += 1./params.window
+        if track.score > 1 :
+            track.score = 1.0
+        if track.score >= params.confirmed_threshold:
+            track.state = 'confirmed'
+        else:
+            track.state = 'tentative'        
         ############
         # END student code
         ############ 
