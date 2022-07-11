@@ -119,17 +119,10 @@ class Trackmanagement:
                 if meas_list[0].sensor.in_fov(track.x):
                     # your code goes here
                     track.score -= 1./params.window
-                    if track.score < 0:
-                        track.score = 0.0
         # delete old tracks   
         for track in self.track_list:
-            if track.state == 'confirmed':
-                if track.score <= params.delete_threshold:
-                    self.delete_track(track)
-            else:
-                if track.P[0,0] > params.max_P or track.P[1,1] > params.max_P:
-                    self.delete_track(track)
-                    
+            if (track.state == 'confirmed' and track.score <= params.delete_threshold) or (track.P[0,0] > params.max_P or track.P[1,1] > params.max_P) or (track.score < 0.05):
+                self.delete_track(track)
         ############
         # END student code
         ############ 
@@ -160,7 +153,7 @@ class Trackmanagement:
         ############
 
         track.score += 1./params.window
-        if track.score > 1 :
+        if track.score > 1:
             track.score = 1.0
         if track.score >= params.confirmed_threshold:
             track.state = 'confirmed'

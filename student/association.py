@@ -40,8 +40,7 @@ class Association:
         
         # the following only works for at most one track and one measurement
         #self.association_matrix = np.matrix([]) # reset matrix
-        #self.unassigned_tracks = [] # reset lists
-        #self.unassigned_meas = []
+
         
         #if len(meas_list) > 0:
         #    self.unassigned_meas = [0]
