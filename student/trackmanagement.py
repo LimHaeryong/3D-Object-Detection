@@ -41,9 +41,9 @@ class Track:
         self.x[:3] = pos_veh[:3]
         
         self.P = np.zeros((6, 6))
-        self.P[3, 3] = params.sigma_p44
-        self.P[4, 4] = params.sigma_p55
-        self.P[5, 5] = params.sigma_p66
+        self.P[3, 3] = params.sigma_p44**2
+        self.P[4, 4] = params.sigma_p55**2
+        self.P[5, 5] = params.sigma_p66**2
         
         self.P[:3, :3] = M_rot*meas.R*M_rot.transpose()
         #self.x = np.matrix([[49.53980697],
